@@ -1,0 +1,51 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.huadiangou.goldenfinger.MainActivity" >
+
+    <TextView
+        android:id="@+id/tv_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/red"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/status_ll"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="7"
+            android:text="@string/hello_world" />
+
+        <Button
+            android:id="@+id/bt_task"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:text="@string/get_task" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/split_view"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_below="@id/status_ll"
+        android:background="@android:color/holo_green_light" />
+
+    <com.huadiangou.goldenfinger.TaskListView
+        android:id="@+id/task_listview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/split_view"
+        android:dividerHeight="10dp" />
+
+</RelativeLayout>
