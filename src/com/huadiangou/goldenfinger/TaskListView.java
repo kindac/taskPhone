@@ -1,16 +1,33 @@
 package com.huadiangou.goldenfinger;
 
+import java.util.List;
+import java.util.Map;
+
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
+
+import com.huadiangou.pulltask.ListViewData;
+import com.huadiangou.pulltask.Task;
 
 public class TaskListView extends ListView {
 
 	private TaskAdapter adapter;
-	
+	private List<String> list = ListViewData.list;
+	private Map<String, Drawable> iconMap = ListViewData.iconMap;
+	private Map<String, String> lableMap = ListViewData.lableMap;
+	private Map<String, Integer> colorMap = ListViewData.colorMap;
+	private int clickedcolor;
+
 	public TaskListView(Context context) {
 		this(context, null);
 	}
@@ -21,19 +38,34 @@ public class TaskListView extends ListView {
 
 	public TaskListView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
+
 		init();
 	}
 
 	private void init() {
+		clickedcolor = getResources().getColor(android.R.color.holo_orange_dark);
+
 		adapter = new TaskAdapter();
 		setAdapter(adapter);
+
+		setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				String packageName = list.get(position);
+				PackageManager pm = getContext().getPackageManager();
+				Intent i = pm.getLaunchIntentForPackage(packageName);
+				getContext().startActivity(i);
+				getRealSingleTask(packageName).doneTimes += 1;
+				colorMap.put(packageName, clickedcolor);
+			}
+		});
 	}
 
 	private class TaskAdapter extends BaseAdapter {
 
 		@Override
 		public int getCount() {
-			return 6;
+			return list.size();
 		}
 
 		@Override
@@ -49,13 +81,55 @@ public class TaskListView extends ListView {
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 			SingleTaskView singleTaskView = null;
-			if(convertView != null){
-				singleTaskView = (SingleTaskView)convertView;
-			}else{
+			if (convertView != null) {
+				singleTaskView = (SingleTaskView) convertView;
+			} else {
 				singleTaskView = new SingleTaskView(parent.getContext());
 			}
+			ImageView iv = (ImageView) singleTaskView.findViewById(R.id.iv_taskpic);
+			TextView tv = (TextView) singleTaskView.findViewById(R.id.tv_task_status);
+			Drawable icon = iconMap.get(list.get(position));
+			if (icon != null) {
+				iv.setBackground(icon);
+			}
+
+			String lable = lableMap.get(list.get(position));
+			if (lable != null) {
+				tv.setText(lable);
+			} else {
+				tv.setText("check Code");
+			}
+			String packageName = list.get(position);
+			int color = colorMap.get(packageName);
+			singleTaskView.setBackgroundColor(color);
 			return singleTaskView;
 		}
 
+	}
+
+	public synchronized void addItem(String packageName, String lable, Drawable icon) {
+		if (packageName != null) {
+			list.add(packageName);
+		}
+		if (icon != null) {
+			iconMap.put(packageName, icon);
+		}
+		if (lable != null) {
+			lableMap.put(packageName, lable);
+		}
+		colorMap.put(packageName, getResources().getColor(android.R.color.white));
+		adapter.notifyDataSetChanged();
+	}
+
+	private Task.RealSingleTask getRealSingleTask(String packageName) {
+		for (Task.RealSingleTask rst : ListViewData.task.realTaskList) {
+			if (rst.packageName.equals(packageName))
+				return rst;
+		}
+		return null;
+	}
+
+	public void update() {
+		adapter.notifyDataSetChanged();
 	}
 }

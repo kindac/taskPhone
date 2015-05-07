@@ -6,16 +6,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TaskParams {
+
+//http://192.168.1.50:4501/IF/SIM/sim_task.aspx?CELL_WIDTH=800&CELL_HEIGHT=480&BOX_SIGNATURE=070457c801902417668&number=2&task_type=0
+	private static String CELL_WIDTH="CELL_WIDTH";
+	private static String CELL_HEIGHT="CELL_HEIGHT";
+	private static String BOX_SIGNATURE="BOX_SIGNATURE";
 	private String url;
-	private static String NUM = "NUM";
-	private static String TYPE = "TYPE";
+	private static String NUM = "number";
+	private static String TYPE = "task_type";
 
 	private Map<String, String> params;
 
 	private TaskParams() {
 	}
 
-	public TaskParams(String url, int num, int type) throws ParamsInvaliedException {
+	public TaskParams(String url,int cell_width, int cell_heith, String box_signature, int num, int type) throws ParamsInvaliedException {
 		params = new HashMap<String, String>();
 		if (url == null) {
 			throw new ParamsInvaliedException("task count is invalied");
@@ -23,16 +28,26 @@ public class TaskParams {
 			this.url = url;
 		}
 
-		if (num <= 0) {
-			throw new ParamsInvaliedException("task count is invalied");
-		} else {
-			params.put(NUM, String.valueOf(num));
-		}
+		params.put(CELL_WIDTH, String.valueOf(cell_width));
+		params.put(CELL_HEIGHT, String.valueOf(cell_heith));
+		params.put(BOX_SIGNATURE, box_signature);
 
-		if (type < 0 || type > 2) {
-			throw new ParamsInvaliedException("task type is invalied");
-		} else {
-			params.put(TYPE, String.valueOf(type));
+		params.put(NUM, String.valueOf(num));
+
+		params.put(TYPE, String.valueOf(type));
+	}
+	
+	public TaskParams(String url, String[]... para){
+		params = new HashMap<String, String>();
+		this.url = url;
+		if(para != null){
+			for(int i = 0; i < para.length; i++){
+				String[] p = para[i];
+				if(p.length != 2){
+					continue;
+				}
+				this.params.put(p[0], p[1]);
+			}
 		}
 	}
 
