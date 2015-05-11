@@ -1,18 +1,18 @@
 package com.huadiangou.goldenfinger;
 
-import java.lang.ref.WeakReference;
-
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -25,6 +25,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.huadiangou.goldenfinger.service.GoldenFingerService;
+import com.huadiangou.goldenfinger.service.GoldenFingerService.UpdateUI;
 import com.huadiangou.pulltask.ApkInfo;
 import com.huadiangou.pulltask.ChangeSystemProperty;
 import com.huadiangou.pulltask.InstallTask;
@@ -36,7 +38,7 @@ import com.huadiangou.pulltask.Task;
 import com.huadiangou.pulltask.UploadTask;
 import com.huadiangou.utils.Utils;
 
-public class MainActivity extends Activity implements PullTask.UpdateUI {
+public class MainActivity extends Activity implements PullTask.UpdateUI, UpdateUI {
 	private String TAG = MainActivity.this.getClass().getCanonicalName();
 	private TextView osStatusTextView = null;
 	private Button getNewTaskButton = null;
@@ -47,129 +49,63 @@ public class MainActivity extends Activity implements PullTask.UpdateUI {
 	private Status STATUS = ListViewData.STATUS;
 	private ScrollView scrollView = null;
 
-	public static int ERR = 1;
+	private ServiceConnection mServiceConnection = new ServiceConnection() {
 
-	private static class MainHander extends Handler {
-		private WeakReference<MainActivity> mainAc;
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
 
-		public MainHander(MainActivity mc) {
-			this.mainAc = new WeakReference<MainActivity>(mc);
 		}
 
 		@Override
-		public void handleMessage(Message msg) {
-			MainActivity mc = mainAc.get();
-			if (msg == null) {
-				return;
-			}
-
-			switch (msg.what) {
-			case MsgWhat.OK: {
-				break;
-			}
-			case MsgWhat.ERR: {
-				mc.STATUS.status = Status.IDLE;
-				mc.getNewTaskButton.setText(mc.getResources().getString(R.string.get_task));
-				String s = (String) msg.obj;
-				mc.toastShow(s, 0);
-				break;
-			}
-			case MsgWhat.SDCARD_ERR: {
-				mc.STATUS.status = Status.IDLE;
-				mc.getNewTaskButton.setText(mc.getResources().getString(R.string.get_task));
-				String s = (String) msg.obj;
-				mc.showMessageOnHead(s);
-				break;
-			}
-			case MsgWhat.PULL_TASK: {
-				mc.STATUS.status = Status.RUNNING;
-				mc.pause();
-				mc.clearLastTask();
-				PullTask.getInstance(mc).pullTask();
-				break;
-			}
-			case MsgWhat.INSTALL_APK: {
-				Task.RealSingleTask rst = (Task.RealSingleTask) msg.obj;
-				new InstallTask(mc, rst, this).install();
-				break;
-			}
-			case MsgWhat.DOWNLOAD_TASK_FAILED: {
-				String s = (String) msg.obj;
-				mc.showMessageOnHead(s);
-				break;
-			}
-			case MsgWhat.INSTALL_FAILED: {
-				String s = (String) msg.obj;
-				mc.showMessageOnHead(s);
-				break;
-			}
-			case MsgWhat.INSTALL_SUCCESS: {
-				String packageName = (String) msg.obj;
-				mc.updateListView(packageName);
-				break;
-			}
-			case MsgWhat.UP_LOAD: {
-				mc.pause();
-				new UploadTask(mc, null, mc.handler).upload();
-				break;
-			}
-			case MsgWhat.UPLOAD_SUCCESS: {
-				String s = (String) msg.obj;
-				mc.popAlterDialogWithMessage(s, msg.what);
-				mc.getNewTaskButton.setText(mc.getResources().getString(R.string.get_task));
-				break;
-			}
-			case MsgWhat.UPLOAD_FAILED: {
-				String s = (String) msg.obj;
-				mc.popAlterDialogWithMessage(s, msg.what);
-				break;
-			}
-			case MsgWhat.FINISHED: {
-				mc.disPause();
-				break;
-			}
-			case MsgWhat.RESET: {
-				mc.getNewTaskButton.setText(mc.getResources().getString(R.string.get_task));
-				mc.clearLastTask();
-				mc.STATUS.status = Status.IDLE;
-				mc.disPause();
-				break;
-			}
-			case MsgWhat.SET_PROP: {
-				new ChangeSystemProperty(mc, mc.handler).run();
-				break;
-			}
-			case MsgWhat.SET_PROP_RESULT: {
-				String s = (String) msg.obj;
-				if (s != null && s.equals("OK")) {
-					mc.appendLog(mc.getSystemInfo());
-				}
-				break;
-			}
-			}
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			handler = ((GoldenFingerService.GfsIBinder) service).getMainHandler();
+			gfsService = ((GoldenFingerService.GfsIBinder) service).getService();
 		}
-	}
+	};
 
-	private Handler handler = new MainHander(this);
+	private GoldenFingerService.MainHander handler;
+	private GoldenFingerService gfsService;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		Intent i = new Intent(GoldenFingerService.class.getCanonicalName());
+		startService(i);
+
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		Log.d("ABCD", "Status " + ListViewData.STATUS.status);
+		bindGoldenFinferService();
 		initView();
 	}
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		Log.d("ABCD===", "Status " + ListViewData.STATUS.status);
+		unbindGoldenFinferService();
+	}
+
+	@Override
+    public void onBackPressed() {
+		return;
+	}
+	
+
+	private void bindGoldenFinferService() {
+		Intent i = new Intent(this, GoldenFingerService.class);
+		bindService(i, mServiceConnection, BIND_ABOVE_CLIENT);
+	}
+
+	private void unbindGoldenFinferService() {
+		unbindService(mServiceConnection);
+	}
+	
+	private void createFloatWindow() {
+
 	}
 
 	private void initView() {
@@ -205,6 +141,10 @@ public class MainActivity extends Activity implements PullTask.UpdateUI {
 		getNewTaskButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				if(gfsService != null && gfsService.updateUI == null){
+					gfsService.setUpdateUI(MainActivity.this);
+				}
+
 				if (STATUS.status == Status.RUNNING) {
 					if (checkWhetherCanUpload()) {
 						Message msg = Message.obtain();
@@ -358,7 +298,8 @@ public class MainActivity extends Activity implements PullTask.UpdateUI {
 			return;
 		}
 		ApkInfo ai = Utils.getIcon(this, packageName);
-		taskListView.addItem(packageName, ai.l, ai.d);
+		if(ai != null)
+			taskListView.addItem(packageName, ai.l, ai.d);
 	}
 
 	private void clearLastTask() {
@@ -408,6 +349,96 @@ public class MainActivity extends Activity implements PullTask.UpdateUI {
 	}
 
 	private void resetorState() {
+
+	}
+
+	@Override
+	public void updateUI(Message msg) {
+		switch (msg.what) {
+		case MsgWhat.ERR: {
+			STATUS.status = Status.IDLE;
+			getNewTaskButton.setText(getResources().getString(R.string.get_task));
+			String s = (String) msg.obj;
+			toastShow(s, 0);
+			break;
+		}
+		case MsgWhat.SDCARD_ERR: {
+			STATUS.status = Status.IDLE;
+			getNewTaskButton.setText(getResources().getString(R.string.get_task));
+			String s = (String) msg.obj;
+			showMessageOnHead(s);
+			break;
+		}
+		case MsgWhat.PULL_TASK: {
+			STATUS.status = Status.RUNNING;
+			pause();
+			clearLastTask();
+			PullTask.getInstance(this).pullTask();
+			break;
+		}
+		case MsgWhat.INSTALL_APK: {
+			Task.RealSingleTask rst = (Task.RealSingleTask) msg.obj;
+			new InstallTask(this, rst, handler).install();
+			break;
+		}
+		case MsgWhat.DOWNLOAD_TASK_FAILED: {
+			String s = (String) msg.obj;
+			showMessageOnHead(s);
+			break;
+		}
+		case MsgWhat.INSTALL_FAILED: {
+			String s = (String) msg.obj;
+			showMessageOnHead(s);
+			break;
+		}
+		case MsgWhat.INSTALL_SUCCESS: {
+			String packageName = (String) msg.obj;
+			updateListView(packageName);
+			break;
+		}
+		case MsgWhat.UP_LOAD: {
+			pause();
+			new UploadTask(this, null, handler).upload();
+			break;
+		}
+		case MsgWhat.UPLOAD_SUCCESS: {
+			String s = (String) msg.obj;
+			popAlterDialogWithMessage(s, msg.what);
+			getNewTaskButton.setText(getResources().getString(R.string.get_task));
+			break;
+		}
+		case MsgWhat.UPLOAD_FAILED: {
+			String s = (String) msg.obj;
+			popAlterDialogWithMessage(s, msg.what);
+			break;
+		}
+		case MsgWhat.FINISHED: {
+			disPause();
+			break;
+		}
+		case MsgWhat.RESET: {
+			String s = (String)msg.obj;
+			if(s != null){
+				toastShow(s, 1);
+			}
+			getNewTaskButton.setText(getResources().getString(R.string.get_task));
+			clearLastTask();
+			STATUS.status = Status.IDLE;
+			disPause();
+			break;
+		}
+		case MsgWhat.SET_PROP: {
+			new ChangeSystemProperty(this, handler).run();
+			break;
+		}
+		case MsgWhat.SET_PROP_RESULT: {
+			String s = (String) msg.obj;
+			if (s != null && s.equals("OK")) {
+				appendLog(getSystemInfo());
+			}
+			break;
+		}
+		}
 
 	}
 

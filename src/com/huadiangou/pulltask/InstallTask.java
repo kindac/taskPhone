@@ -2,6 +2,8 @@ package com.huadiangou.pulltask;
 
 import java.io.File;
 
+import org.w3c.dom.UserDataHandler;
+
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -42,21 +44,45 @@ public class InstallTask {
 		String packageName = Utils.getPackage(context, path);
 
 		boolean b = true;
+		String msgs = "";
 		Message msg = Message.obtain();
 		if (!Utils.checkWhetherInstlled(context, packageName)) {
-			String cmd = "pm install -r " + path;
+			String userDataPath = "/data/data/" + packageName;
+			String cmd0 = "rm -rf " + userDataPath;
+			String cmd1 = "pm install -r " + path;
+			Exec.run(true, cmd0);
+			b = Exec.run(true, cmd1);
+			msgs = b ? "[OK]success install " + packageName : "[Failed]failed install " + packageName;
+		} else if (rst.isNewUser()) {
+			String cmd = "pm clear " + packageName;
 			b = Exec.run(true, cmd);
+			msgs = b ? "[OK]success install " + packageName : "[Failed]failed to clear " + packageName;
+		} else {
+			// TODO
+			if (rst.userDataSaveName != null) {
+				String userDataPath = (Common.sdCard == null ? "" : Common.sdCard) + "/Data" + rst.userDataSaveName;
+				String cmd0 = "rm -rf /data/data/" + packageName;
+				Exec.run(true, cmd0);
+				File userDataFile = new File(userDataPath);
+				if (userDataFile.exists()) {
+					String cmd1 = "busybox tar xvf " + userDataPath + " -C " + "/";
+					b = Exec.run(true, cmd1);
+					msgs = b ? "[OK]success to copy " + packageName : "[Failed]failed to copy " + packageName;
+				} else {
+					b = false;
+					msgs = "[Failed]active user data package is not found";
+				}
+			}
 		}
 
 		if (b) {
 			rst.packageName = packageName;
 			Utils.createUserdataTarGz(context, packageName, Common.USERDATA_ORIGINAL);
-
 			msg.what = MsgWhat.INSTALL_SUCCESS;
 			msg.obj = Utils.getPackage(context, path);
 		} else {
 			msg.what = MsgWhat.INSTALL_FAILED;
-			msg.obj = "[Failed] install " + path;
+			msg.obj = msgs;
 		}
 		handler.sendMessage(msg);
 		ListViewData.installAPKCount += 1;

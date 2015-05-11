@@ -22,6 +22,7 @@ import android.util.Log;
 
 import com.huadiangou.pulltask.Task.TaskIsZeroException;
 import com.huadiangou.pulltask.TaskParams.ParamsInvaliedException;
+import com.huadiangou.utils.Utils;
 
 public class PullTask {
 	private static PullTask pullTask = null;
@@ -290,17 +291,8 @@ public class PullTask {
 	}
 
 	public boolean checkMd5sum(File saveFile, String md5sum) {
-
-		return true;
-	}
-	
-	private void clearLastTask(){
-		ListViewData.colorMap.clear();
-		ListViewData.iconMap.clear();
-		ListViewData.installAPKCount = 0;
-		ListViewData.list.clear();
-		ListViewData.task = null;
-		ListViewData.uploadCount = 0;
+		String savedFileMd5sum = Utils.getMD5(saveFile);
+		return savedFileMd5sum.equals(md5sum);
 	}
 
 }

@@ -15,6 +15,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.huadiangou.pulltask.ListViewData;
 import com.huadiangou.pulltask.Task;
@@ -54,9 +55,13 @@ public class TaskListView extends ListView {
 				String packageName = list.get(position);
 				PackageManager pm = getContext().getPackageManager();
 				Intent i = pm.getLaunchIntentForPackage(packageName);
-				getContext().startActivity(i);
-				getRealSingleTask(packageName).doneTimes += 1;
-				colorMap.put(packageName, clickedcolor);
+				if (i != null) {
+					getContext().startActivity(i);
+					getRealSingleTask(packageName).doneTimes += 1;
+					colorMap.put(packageName, clickedcolor);
+				} else {
+					Toast.makeText(getContext(), packageName + " is not installed", Toast.LENGTH_LONG).show();
+				}
 			}
 		});
 	}

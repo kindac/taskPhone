@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
@@ -63,6 +64,13 @@ public class Utils {
 
 	public static boolean checkWhetherInstlled(Context cxt, String packageName) {
 		PackageManager pm = cxt.getPackageManager();
+		try {
+			pm.getPackageInfo(packageName, PackageManager.GET_GIDS);
+			return true;
+		} catch (NameNotFoundException e) {
+			e.printStackTrace();
+		}
+		/*
 		List<PackageInfo> apkInfos = pm.getInstalledPackages(0);
 		String name = "";
 		PackageInfo apk;
@@ -73,6 +81,7 @@ public class Utils {
 				return true;
 			}
 		}
+		*/
 		return false;
 	}
 
