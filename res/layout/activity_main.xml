@@ -2,21 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/top_view"
     tools:context="com.huadiangou.goldenfinger.MainActivity" >
-
-    <View
-        android:id="@+id/vw_pause"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#FF999999"
-        android:visibility="gone" />
-
-    <ProgressBar
-        android:id="@+id/pb_progress"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_centerInParent="true"
-        android:visibility="gone" />
 
     <TextView
         android:id="@+id/tv_message"
@@ -43,9 +30,9 @@
             <TextView
                 android:id="@+id/tv_status"
                 android:layout_width="match_parent"
-                android:textSize="13sp"
                 android:layout_height="wrap_content"
-                android:text="@string/hello_world" />
+                android:text="@string/hello_world"
+                android:textSize="13sp" />
         </ScrollView>
 
         <Button
@@ -63,11 +50,98 @@
         android:layout_below="@id/status_ll"
         android:background="@android:color/holo_green_light" />
 
+    <LinearLayout
+        android:id="@+id/ll_task_control"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_below="@id/split_view" >
+
+        <RadioGroup
+            android:id="@+id/rg_task_type"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="6"
+            android:orientation="horizontal" >
+
+            <RadioButton
+                android:id="@+id/rb_new"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/new_type" />
+
+            <RadioButton
+                android:id="@+id/rb_active"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/active_type" />
+
+            <RadioButton
+                android:id="@+id/rb_alte"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/alternative_type" />
+        </RadioGroup>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <RelativeLayout
+            android:id="@+id/rl_changenumber"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="4"
+            android:background="#ff999999" >
+            <TextView
+                android:id="@+id/tv1"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true"
+                android:background="#ff999999"
+                android:text="@string/change_number"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:id="@+id/rl_m"
+                android:layout_width="wrap_content"
+                android:layout_toLeftOf="@id/tv1"
+                android:layout_height="match_parent" >
+
+                <TextView
+                    android:id="@+id/current_number"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#ff999999"
+                    android:gravity="center"
+                    android:text="@string/current_number"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tv_nownumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_below="@+id/current_number"
+                    android:layout_centerHorizontal="true"
+                    android:background="#ff999999"
+                    android:gravity="center"
+                    android:text="1"
+                    android:textSize="17sp" />
+            </RelativeLayout>
+
+        </RelativeLayout>
+    </LinearLayout>
+
     <com.huadiangou.goldenfinger.TaskListView
         android:id="@+id/task_listview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/split_view"
+        android:layout_below="@id/ll_task_control"
         android:dividerHeight="10dp" />
 
 </RelativeLayout>

@@ -13,25 +13,46 @@ import android.util.Log;
 import com.huadiangou.utils.Exec;
 import com.huadiangou.utils.Utils;
 
-public class InstallTask {
+public class InstallTask extends AbstracAsyncTask {
 	private static final String TAG = "com.huadiangou.pulltask.InstallTask";
 	private Handler handler;
 	private Task.RealSingleTask rst;
 	private Context context;
 	private String packageName;
+	private InstallApkTask installApkTask;
 
 	public InstallTask(Context context, Task.RealSingleTask rst, Handler handler) {
 		this.context = context;
 		this.rst = rst;
 		this.handler = handler;
 	}
+	
+	@Override
+	public void execute(){
+		installApkTask = new InstallApkTask();
+		installApkTask.execute(rst);
+	}
 
-	public void install() {
-		new InstallApkTask().execute(rst);
+	public void cancel() {
+		if (installApkTask != null) {
+			installApkTask.cancel(true);
+		}
+	}
+
+	public void add() {
+
+	}
+
+	public void remove() {
+
+	}
+
+	public void handler(Message msg) {
+		handler.sendMessage(msg);
 	}
 
 	public void realInstall(Task.RealSingleTask rst, Handler handler) {
-		if (!rst.DOWNLOAD_FINISHED) {
+		if (!rst.isDownloadFinished()) {
 			return;
 		}
 
@@ -84,12 +105,12 @@ public class InstallTask {
 			msg.what = MsgWhat.INSTALL_FAILED;
 			msg.obj = msgs;
 		}
-		handler.sendMessage(msg);
-		ListViewData.installAPKCount += 1;
-		if (ListViewData.installAPKCount == ListViewData.task.realTaskList.size() && ListViewData.SET_PROPERTY) {
+		handler(msg);
+		StaticData.installAPKCount += 1;
+		if (StaticData.installAPKCount == StaticData.task.realTaskList.size() && StaticData.SET_PROPERTY) {
 			Message m = Message.obtain();
 			m.what = MsgWhat.FINISHED;
-			handler.sendMessage(m);
+			handler(m);
 		}
 	}
 

@@ -17,5 +17,9 @@ public class MsgWhat {
 	public static final int RESET = 12;
 	public static final int SET_PROP = 13;
 	public static final int SET_PROP_RESULT = 14;
+	public static final int UPDATE_SYSTEMDATA = 15;
+	public static final int CHECK_UPDATE_MESSAGE = 16;
+	public static final int INSTALL_GOLDENFINGER = 17;
+	public static final int FRAGMENT_DISMISS = 18;
 
 }

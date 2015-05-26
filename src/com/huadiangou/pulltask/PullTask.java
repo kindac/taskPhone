@@ -17,6 +17,7 @@ import org.json.JSONObject;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
@@ -24,39 +25,69 @@ import com.huadiangou.pulltask.Task.TaskIsZeroException;
 import com.huadiangou.pulltask.TaskParams.ParamsInvaliedException;
 import com.huadiangou.utils.Utils;
 
-public class PullTask {
+public class PullTask extends AbstracAsyncTask {
 	private static PullTask pullTask = null;
-	private UpdateUI updateUIInterface;
 	private Task task;
+	private PullTaskJsonTask pullTaskJsonTask;
+	private Handler handler;
 
 	private PullTask() {
 	}
 
-	private PullTask(UpdateUI updateUIInterface) {
-		this.updateUIInterface = updateUIInterface;
+	private PullTask(Handler handler) {
+		this.handler = handler;
 	}
 
-	public static PullTask getInstance(UpdateUI updateUIInterface) {
-		if (pullTask == null) {
-			pullTask = new PullTask(updateUIInterface);
-		}
+	@Override
+	public void execute() {
 
+	}
+
+	@Override
+	public void cancel() {
+		if (pullTaskJsonTask != null) {
+			pullTaskJsonTask.cancel(true);
+		}
+	}
+
+	@Override
+	public void add() {
+
+	}
+
+	@Override
+	public void remove() {
+
+	}
+
+	@Override
+	public void handler(Message msg) {
+		handler.sendMessage(msg);
+	}
+
+	public static PullTask getInstance(Handler handler) {
+		if (pullTask == null) {
+			pullTask = new PullTask(handler);
+		}
 		return pullTask;
 	}
 
-	public void pullTask() {
-		//clearLastTask();
+	public void pullTask(int number, int task_type) {
+		// clearLastTask();
 
 		TaskParams taskParams;
 		try {
-			taskParams = new TaskParams(Common.getInstance().getPullTaskAddr(), 800, 480, "070457c801902417668", 1, 0);
-			new PullTaskJsonTask().execute(taskParams);
+			taskParams = new TaskParams(Common.getInstance().getPullTaskAddr(), 800, 480, "070457c801902417668",
+					number, task_type);
+			pullTaskJsonTask = new PullTaskJsonTask();
+			pullTaskJsonTask.execute(taskParams);
 
 		} catch (ParamsInvaliedException e) {
 			e.printStackTrace();
 		}
 	}
 
+	/*
 	public interface UpdateUI {
 		public void updateUI(String[] packgeNames);
 
@@ -64,6 +95,7 @@ public class PullTask {
 
 		public Context getContext();
 	}
+	*/
 
 	private class PullTaskJsonTask extends AsyncTask<TaskParams, Void, JSONObject> {
 		private final String TAG = PullTaskJsonTask.class.getCanonicalName();
@@ -90,6 +122,7 @@ public class PullTask {
 				conn.setDoInput(true);
 				conn.setDoOutput(false);
 				conn.addRequestProperty("Connection", "Keep-Alive");
+				conn.setConnectTimeout(10 * 1000);
 
 				int code = conn.getResponseCode();
 				if (code != HttpURLConnection.HTTP_OK) {
@@ -130,7 +163,7 @@ public class PullTask {
 				Message msg = Message.obtain();
 				msg.obj = "Task Size is " + size;
 				msg.what = MsgWhat.RESET;
-				updateUIInterface.sendMessage(msg);
+				handler(msg);
 				return;
 			}
 
@@ -146,12 +179,40 @@ public class PullTask {
 					}
 					Message msg = Message.obtain();
 					msg.what = MsgWhat.SET_PROP;
-					updateUIInterface.sendMessage(msg);
+					handler(msg);
 				}
 			}).start();
 
 			for (Task.RealSingleTask rst : task.realTaskList) {
-				new DownloadFileTask().execute(rst);
+				final Task.RealSingleTask realSingleTask = rst;
+				for (int i = 0; i < rst.fileList.size(); i++) {
+					List<String> list = rst.fileList.get(i);
+					String[] params = new String[4];
+					int length = Math.min(list.size(), 4);
+					for (int j = 0; j < length; j++) {
+						params[j] = list.get(j);
+					}
+					if (length < 4) {
+						params[3] = "";
+					}
+					new DownloadTask(handler, params) {
+						@Override
+						public void onPostExecute(boolean b) {
+							Message msg = Message.obtain();
+							if (b) {
+								msg.what = MsgWhat.INSTALL_APK;
+								msg.obj = realSingleTask;
+								synchronized (realSingleTask) {
+									realSingleTask.hasSucessDownloadFileSize++;
+								}
+							} else {
+								msg.what = MsgWhat.DOWNLOAD_TASK_FAILED;
+								msg.obj = "[Failed] download " + realSingleTask.APK;
+							}
+							handler(msg);
+						}
+					}.execute();
+				}
 			}
 		}
 	}
@@ -160,7 +221,7 @@ public class PullTask {
 		try {
 			if (taskJSONObject != null) {
 				task = new Task(taskJSONObject);
-				ListViewData.task = task;
+				StaticData.task = task;
 				return task.getTaskSize();
 			}
 		} catch (TaskIsZeroException e) {
@@ -196,8 +257,8 @@ public class PullTask {
 					tryTimes = 0;
 				}
 			}
-			rst.DOWNLOAD_FINISHED = (n == rst.fileList.size());
-			return Boolean.valueOf(rst.DOWNLOAD_FINISHED);
+			// rst.DOWNLOAD_FINISHED = (n == rst.fileList.size());
+			return Boolean.valueOf(rst.isDownloadFinished());
 		}
 
 		@Override
@@ -211,7 +272,7 @@ public class PullTask {
 				// TODO
 				msg.obj = "[Failed] download " + realSingleTask.APK;
 			}
-			updateUIInterface.sendMessage(msg);
+			handler(msg);
 		}
 	}
 
@@ -243,7 +304,7 @@ public class PullTask {
 				Message msg = Message.obtain();
 				msg.what = MsgWhat.SDCARD_ERR;
 				msg.obj = "Sdcard is not writable";
-				updateUIInterface.sendMessage(msg);
+				handler(msg);
 				return Boolean.FALSE;
 			}
 		}

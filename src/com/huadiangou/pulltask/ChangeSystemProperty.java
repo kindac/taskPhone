@@ -20,7 +20,7 @@ public class ChangeSystemProperty {
 	private static final String TAG = "com.huadiangou.pulltas.UploadTask";
 	private Handler handler;
 	private Context context;
-	private Task task = ListViewData.task;
+	private Task task = StaticData.task;
 
 	public ChangeSystemProperty(Context context, Handler handler) {
 		this.context = context;
@@ -123,8 +123,8 @@ public class ChangeSystemProperty {
 			msg.what = MsgWhat.SET_PROP_RESULT;
 			msg.obj = s;
 			handler.sendMessage(msg);
-			ListViewData.SET_PROPERTY = true;
-			if (ListViewData.installAPKCount == ListViewData.task.realTaskList.size()) {
+			StaticData.SET_PROPERTY = true;
+			if (StaticData.installAPKCount == StaticData.task.realTaskList.size()) {
 				Message m = Message.obtain();
 				m.what = MsgWhat.FINISHED;
 				handler.sendMessage(m);

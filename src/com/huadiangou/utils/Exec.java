@@ -107,7 +107,58 @@ public class Exec {
 	}
 
 	
+	public static String exec(String... cmd){
+		String str=null;
+		Process process = null;
+		DataOutputStream os = null;
+		BufferedReader stdoutBuffer = null;
+		try {
+			process = Runtime.getRuntime().exec(cmd);
+			InputStream is = process.getInputStream();
+			stdoutBuffer = new BufferedReader(new InputStreamReader(is));
+			StringBuilder sb = new StringBuilder();
+			String line = null;
+			while ((line = stdoutBuffer.readLine()) != null) {
+				sb.append(line);
+			}
+			int result = process.waitFor();
+
+			if (result == 0) {
+				str = sb.toString();
+			} else {
+				String errStr = getString(process.getErrorStream());
+				System.out.println("cmd failed, result: " + result);
+				System.out.println("stderr: " + errStr);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (os != null) os.close();
+				if (stdoutBuffer != null) stdoutBuffer.close();
+				process.destroy();
+			} catch (Exception e) {
+				Log.d(Exec.class.getName(), e.getMessage(),e);
+			}
+		}
+		return str;
+	}
 	
-	
+	public synchronized static boolean isProggressRunning(String name) {
+		Process process = null;
+		try {
+			process = Runtime.getRuntime().exec("ps");
+			BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String line = "";
+			while ((line = br.readLine()) != null) {
+				if (line.contains(name)) {
+					return true;
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
 }
 

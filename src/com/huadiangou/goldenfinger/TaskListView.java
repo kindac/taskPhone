@@ -17,16 +17,16 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.huadiangou.pulltask.ListViewData;
+import com.huadiangou.pulltask.StaticData;
 import com.huadiangou.pulltask.Task;
 
 public class TaskListView extends ListView {
 
 	private TaskAdapter adapter;
-	private List<String> list = ListViewData.list;
-	private Map<String, Drawable> iconMap = ListViewData.iconMap;
-	private Map<String, String> lableMap = ListViewData.lableMap;
-	private Map<String, Integer> colorMap = ListViewData.colorMap;
+	private List<String> list = StaticData.list;
+	private Map<String, Drawable> iconMap = StaticData.iconMap;
+	private Map<String, String> lableMap = StaticData.lableMap;
+	private Map<String, Integer> colorMap = StaticData.colorMap;
 	private int clickedcolor;
 
 	public TaskListView(Context context) {
@@ -127,7 +127,7 @@ public class TaskListView extends ListView {
 	}
 
 	private Task.RealSingleTask getRealSingleTask(String packageName) {
-		for (Task.RealSingleTask rst : ListViewData.task.realTaskList) {
+		for (Task.RealSingleTask rst : StaticData.task.realTaskList) {
 			if (rst.packageName.equals(packageName))
 				return rst;
 		}

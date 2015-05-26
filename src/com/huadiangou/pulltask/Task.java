@@ -18,7 +18,7 @@ public class Task {
 	public static String BOX_SIGNATURE = "070457c801902417668";
 	public List<RealSingleTask> realTaskList = new ArrayList<RealSingleTask>();
 	public Map<Integer, List<String>> fileMap = new HashMap<Integer, List<String>>();
-	
+
 	public boolean isNewUser = true;
 
 	public Task(JSONObject jb) throws JSONException, TaskIsZeroException {
@@ -35,10 +35,10 @@ public class Task {
 		}
 
 		String[] urls = USER_PROP.split("/");
-		fileMap.put(0, Arrays.asList(USER_PROP,  urls[urls.length - 1], "main"));
+		fileMap.put(0, Arrays.asList(USER_PROP, urls[urls.length - 1], "main"));
 
 		urls = USER_CONFIG.split("/");
-		fileMap.put(1, Arrays.asList(USER_CONFIG,  urls[urls.length - 1], "scripts"));
+		fileMap.put(1, Arrays.asList(USER_CONFIG, urls[urls.length - 1], "scripts"));
 	}
 
 	public class RealSingleTask {
@@ -49,16 +49,18 @@ public class Task {
 		public String SHELL_MD5;
 		public String DATA;
 		public String DATA_MD5;
-		
+
 		public String packageName;
 		public int doneTimes = 0;
-		
-		public boolean DOWNLOAD_FINISHED = false;
+
+		// public boolean DOWNLOAD_FINISHED = false;
 		public List<List<String>> fileList = new ArrayList<List<String>>();
-		
+		public int hasSucessDownloadFileSize = 0;
+
 		public Task task = Task.this;
-		
+
 		public String userDataSaveName = null;
+		public long totalRunTime;
 
 		public RealSingleTask(JSONObject jb) throws JSONException {
 			ID = jb.getString("ID");
@@ -77,11 +79,14 @@ public class Task {
 				userDataSaveName = urls[urls.length - 1];
 				fileList.add(Arrays.asList(DATA, userDataSaveName, "Data/" + ID, APK_MD5));
 			}
-
 		}
-		
-		public boolean isNewUser(){
+
+		public boolean isNewUser() {
 			return isNewUser;
+		}
+
+		public boolean isDownloadFinished() {
+			return (hasSucessDownloadFileSize == fileList.size());
 		}
 	}
 

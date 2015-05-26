@@ -33,7 +33,7 @@ public class UploadTask {
 	private Handler handler;
 	private Task.RealSingleTask rst;
 	private Context context;
-	private Task task = ListViewData.task;
+	private Task task = StaticData.task;
 
 	public UploadTask(Context context, Task.RealSingleTask rst, Handler handler) {
 		this.context = context;
@@ -176,7 +176,7 @@ public class UploadTask {
 			}
 			Task task = params[0];
 			for (Task.RealSingleTask rst : task.realTaskList) {
-				ListViewData.uploadCount++;
+				StaticData.uploadCount++;
 				String back = realUpload(rst, handler);
 				boolean b = back.equals("OK");
 				Message msg = Message.obtain();
